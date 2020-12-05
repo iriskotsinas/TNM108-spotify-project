@@ -23,7 +23,7 @@ def getSongList(dfTrivialList):
         songIdsList.append(songIds)
     return songIdsList
 
-def getFeaturesList(dfTrivialList, songIdsList, columns=('SongName', 'Danceability', 'Energy', 'Loudness', 'Speechiness', 'Acousticness', 'Valence', 'Instrumentalness','Tempo')):
+def getFeaturesList(dfTrivialList, songIdsList, sp, columns=('SongName', 'Danceability', 'Energy', 'Loudness', 'Speechiness', 'Acousticness', 'Valence', 'Instrumentalness','Tempo')):
     dfFeaturesList=[]
     for dfTrivial, songIds in zip(dfTrivialList, songIdsList):
         index=0
@@ -47,10 +47,44 @@ def featurePreprocessing(song, categories=['Danceability','Energy', 'Speechiness
     return song[categories]
 
 
-def get_features(track_id: str, token: str) -> dict:
+def get_features(track_id, token):
     sp = spotipy.Spotify(auth=token)
     try:
         features = sp.audio_features([track_id])
         return features[0]
     except:
         return None
+
+
+def euclideanDistance(data1, data2, weight, length):
+    distance = 0
+    for x in range(length):
+        distance += np.square(weight[x]*(data1[x] - data2[x]))
+    return np.sqrt(distance)
+
+def distances(trainingSet, testSong, weight):
+    distanceDict = {}
+    length = testSong.shape[0]
+    for genre, features in trainingSet.items():
+        dist = [[euclideanDistance(features.iloc[x], testSong, weight, length), x] for x in range(len(features))]
+        distanceDict[genre] = dist
+    return distanceDict 
+
+def knn(sortedDistances, k):
+    counter={}
+    for key in sortedDistances.keys():
+        counter[key] =0 
+    minKey=''
+    minId=0
+    neighborKeyAndId=[]
+    for i in range(k):
+        minValue=5
+        for key, value in sortedDistances.items():
+            if value[0][0]<minValue:
+                minId=value[0][1]
+                minKey=key
+                minValue = value[0][0]
+        del(sortedDistances[minKey][0])
+        counter[minKey]=counter[minKey]+1
+        neighborKeyAndId.append([minKey, minId])
+    return counter, neighborKeyAndId         
