@@ -4,6 +4,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
 
 #initialise a client credentials manager
 cid ='05607c4ff03849df9d2b0c05e392ab19'
@@ -13,7 +15,9 @@ client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secr
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 playlists = sp.user_playlists(username)
 
-
+# playlists
+playlist1 = "37i9dQZF1DXaZMjKCB7m2q"
+playlist2 = "37i9dQZF1DX7FV7CCq9byu"
 
 def get_playlist_tracks(username, playlist_id):
   tracks_list = []
@@ -43,20 +47,41 @@ def get_audio_features(track_URIs) :
 def splitlist(track_URIs,step):
     return [track_URIs[i::step] for i in range(step)]
 
-playlist1 = "37i9dQZF1DXaZMjKCB7m2q"
-playlist2 = "37i9dQZF1DX7FV7CCq9byu"
+def accuracy_score(y_test, y_pred):
+    return 0
+
+
 list_tracks1 = get_playlist_URIs(username, playlist1)
 list_tracks2 = get_playlist_URIs(username, playlist2)
 
-audio_features1 = get_audio_features(list_tracks1)
-audio_features2 = get_audio_features(list_tracks2)
-print(audio_features1)
+audio_features_df1 = get_audio_features(list_tracks1)
+audio_features_df2 = get_audio_features(list_tracks2)
 
+print(audio_features_df1.shape) # (rows columns)     #debug
+audio_features_df1["target"] = 1
+audio_features_df2["target"] = 0
+print(audio_features_df1.shape) # (rows columns)    #debug
 
-# [‘danceability’,’acousticness’,’energy’,’instrumentalness’,’speechiness’,’tempo’,’valence’]
-sns.distplot(audio_features1[['acousticness']],color='indianred',axlabel='Tempo')
-sns.distplot(audio_features2[['acousticness']],color='mediumslateblue')
-plt.show()
+training_data = pd.concat([audio_features_df1,audio_features_df2], axis=0, join='outer', ignore_index=True)
+print(training_data.shape)      #debug
 
+sns.distplot(audio_features_df1[['acousticness']],color='g',axlabel='Tempo')
+sns.distplot(audio_features_df2[['acousticness']],color='indianred')
+#plt.show()
 
-#training_data = pd.concat([audio_features1,audio_features2], axis=0, join='outer', ignore_index=True)
+# The selected features to use in the model: 
+features = ['tempo','acousticness','energy','instrumentalness','speechiness']
+
+# split the data training / test
+train, test = train_test_split(training_data, test_size = 0.2)
+x_train = train[features]
+y_train = train['target']
+x_test = test[features]
+y_test = test['target']
+
+# Decision tree classifier
+dtc = DecisionTreeClassifier()
+dt = dtc.fit(x_train,y_train)
+y_pred = dtc.predict(x_test)
+score = accuracy_score(y_test, y_pred) * 100 # fix this
+
