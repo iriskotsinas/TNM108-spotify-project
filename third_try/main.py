@@ -6,6 +6,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
+from sklearn.model_selection import cross_val_score
 
 #initialise a client credentials manager
 cid ='05607c4ff03849df9d2b0c05e392ab19'
@@ -16,8 +22,8 @@ sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 playlists = sp.user_playlists(username)
 
 # playlists
-playlist1 = "37i9dQZF1DXaZMjKCB7m2q"
-playlist2 = "37i9dQZF1DX7FV7CCq9byu"
+playlist1 = "1ZmU9yhNg0Oee9LH3E9sOR"
+playlist2 = "0xBmP4bvMO7CbnAaKeGvb2"
 
 def get_playlist_tracks(username, playlist_id):
   tracks_list = []
@@ -37,7 +43,7 @@ def get_playlist_URIs(username, playlist_id):
 #modified get features function
 def get_audio_features(track_URIs) :
   features = []
-  r = splitlist(track_URIs,2)
+  r = splitlist(track_URIs,5)
   for pack in range(len(r)):
      features = features + (sp.audio_features(r[pack]))
   df = pd.DataFrame.from_dict(features)
@@ -47,9 +53,6 @@ def get_audio_features(track_URIs) :
 def splitlist(track_URIs,step):
     return [track_URIs[i::step] for i in range(step)]
 
-def accuracy_score(y_test, y_pred):
-    return 0
-
 
 list_tracks1 = get_playlist_URIs(username, playlist1)
 list_tracks2 = get_playlist_URIs(username, playlist2)
@@ -57,31 +60,76 @@ list_tracks2 = get_playlist_URIs(username, playlist2)
 audio_features_df1 = get_audio_features(list_tracks1)
 audio_features_df2 = get_audio_features(list_tracks2)
 
-print(audio_features_df1.shape) # (rows columns)     #debug
+# set label with true or false 
 audio_features_df1["target"] = 1
 audio_features_df2["target"] = 0
-print(audio_features_df1.shape) # (rows columns)    #debug
+
+#audio_features_df1.to_csv('streaming_history1.csv')
+#audio_features_df2.to_csv('streaming_history2.csv')
 
 training_data = pd.concat([audio_features_df1,audio_features_df2], axis=0, join='outer', ignore_index=True)
-print(training_data.shape)      #debug
 
-sns.distplot(audio_features_df1[['acousticness']],color='g',axlabel='Tempo')
-sns.distplot(audio_features_df2[['acousticness']],color='indianred')
-#plt.show()
+
+
+
+
+# import matplotlib.pyplot as plt
+
+# f, axes = plt.subplots(2, 4, figsize=(7, 7), sharex=True)
+# f.suptitle('Vertically stacked subplots')
+# plot(x, y)
+# axs[1].plot(x, -y)
+
+features = ['danceability','acousticness','energy','instrumentalness','speechiness','tempo','valence']
+
+# for i in range(1,len(features)):
+#   sns.distplot(audio_features_df1[[features[i]]],color='g',axlabel=features[i])
+#   sns.distplot(audio_features_df2[[features[i]]],color='indianred')
+
+# plt.show()
+
+
+sns.distplot(audio_features_df1[['danceability']],color='g',axlabel='danceability')
+sns.distplot(audio_features_df2[['danceability']],color='indianred')
+# fixa legend 
+# fixa subplot 
+
+plt.show()
 
 # The selected features to use in the model: 
-features = ['tempo','acousticness','energy','instrumentalness','speechiness']
+selectec_features = ['danceability','acousticness','energy','instrumentalness','speechiness', 'valence']
+
 
 # split the data training / test
 train, test = train_test_split(training_data, test_size = 0.2)
-x_train = train[features]
+x_train = train[selectec_features]
 y_train = train['target']
-x_test = test[features]
+x_test = test[selectec_features]
 y_test = test['target']
+
 
 # Decision tree classifier
 dtc = DecisionTreeClassifier()
 dt = dtc.fit(x_train,y_train)
 y_pred = dtc.predict(x_test)
-score = accuracy_score(y_test, y_pred) * 100 # fix this
+score_dt = accuracy_score(y_test, y_pred) * 100 # fix this
+print('Decision tree classifier: ',score_dt)
 
+# cvs = cross_val_score(dtc, y_pred, y_train, cv=10)
+# print(cvs)
+
+# how to select K ??
+knc = KNeighborsClassifier(5)
+knc.fit(x_train,y_train)
+knn_pred = knc.predict(x_test)
+score_knn = accuracy_score(y_test, knn_pred) * 100
+print('KNN Classifier: ', score_knn)
+
+sc = StandardScaler()
+X_train = sc.fit_transform(x_train)
+X_test = sc.transform(x_test)
+pca = PCA(n_components=3)
+classifier = RandomForestClassifier(n_estimators=100, max_depth=2, random_state=0)
+classifier.fit(X_train, y_train)
+y_pred = classifier.predict(X_test)
+print("Accuracy using the PCA model is: ", accuracy_score(y_test, y_pred)*100, "%")
