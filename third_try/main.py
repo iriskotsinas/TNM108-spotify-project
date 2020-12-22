@@ -78,6 +78,9 @@ list_tracks2 = get_playlist_URIs(username, playlist2)
 audio_features_df1 = get_audio_features(list_tracks1)
 audio_features_df2 = get_audio_features(list_tracks2)
 
+audio_features_df1.to_csv('christmasSongs.csv')
+audio_features_df2.to_csv('ordinarySongs.csv')
+
 # dfFeaturesList=[]
 # audioFeaturesList=[audio_features_df1, audio_features_df2]
 # categories = column[1:]
@@ -130,8 +133,7 @@ audio_features_df2 = get_audio_features(list_tracks2)
 audio_features_df1["target"] = 1
 audio_features_df2["target"] = 0
 
-#audio_features_df1.to_csv('streaming_history1.csv')
-#audio_features_df2.to_csv('streaming_history2.csv')
+
 
 ## Convert all rankings and contiguous data to scale between 0-100
 # new_max = 100
