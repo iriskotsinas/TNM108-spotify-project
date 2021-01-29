@@ -14,10 +14,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
 from sklearn.model_selection import cross_val_score
+from variables import cid, secret
 
 #initialise a client credentials manager
-cid ='05607c4ff03849df9d2b0c05e392ab19'
-secret = 'b8c59c18f96c4e059e6c3ec544af9e58'
 username='1198480425'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret) 
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -95,7 +94,7 @@ plt.legend(loc='upper right')
 
 score_dt_=[]
 score_knn_=[]
-score_pca_=[]
+score_randomf_=[]
 
 # The selected features to use in the model: 
 selected_features = ['danceability','acousticness','energy','speechiness']
@@ -124,28 +123,27 @@ for i in range(30):
   score_knn = accuracy_score(y_test, knn_pred) * 100
   score_knn_.append(score_knn)
   
-  # PCA and Random forest classifier
+  # Random forest classifier
   sc = StandardScaler()
   X_train = sc.fit_transform(x_train)
   X_test = sc.transform(x_test)
-  pca = PCA(n_components=3)
   classifier = RandomForestClassifier(n_estimators=100, max_depth=2, random_state=0)
   classifier.fit(X_train, y_train)
   y_pred = classifier.predict(X_test)
-  score_pca = accuracy_score(y_test, y_pred)*100
-  score_pca_.append(score_pca)
+  score_randomf = accuracy_score(y_test, y_pred)*100
+  score_randomf_.append(score_randomf)
   
 
 
-min_m = min(min(score_dt_), min(score_knn_), min(score_pca_))
-max_m = max(max(score_dt_), max(score_knn_), max(score_pca_))
+min_m = min(min(score_dt_), min(score_knn_), min(score_randomf_))
+max_m = max(max(score_dt_), max(score_knn_), max(score_randomf_))
 print(min_m)
 print(max_m)
 
 plt.clf()
 plt.plot(score_dt_, label='Decision tree', color = '#3FE603')
 plt.plot(score_knn_, label='KNN', color="#2FAD03")
-plt.plot(score_pca_, label='Random forest', color="#217802")
+plt.plot(score_randomf_, label='Random forest', color="#217802")
 plt.plot(np.ones(30)*min_m, '--', color='#A0F980', linewidth=1)
 plt.plot(np.ones(30)*max_m, '--', color='#A0F980', linewidth=1)
 plt.legend(loc='lower right')
